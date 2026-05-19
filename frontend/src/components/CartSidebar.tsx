@@ -2,8 +2,9 @@
 
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Plus, Minus, ShoppingBag, Trash2, ArrowRight, Headphones, Package, Sparkles, Gift } from 'lucide-react';
+import Image from 'next/image';
 import { CartItem } from '@/store/app-store';
-import { accessories } from '@/data/headphones';
+import { accessories } from '@/data/accessories';
 import { TrustBadges } from './TrustBadges';
 import { useToast } from './Toast';
 import { useStore } from '@/hooks/use-store';
@@ -106,11 +107,14 @@ export function CartSidebar({ isOpen, onClose, items, onRemove, onUpdateQuantity
                       className="flex items-center gap-3 p-3 rounded-xl bg-gray-50/80 dark:bg-gray-800/80 border border-gray-100 dark:border-gray-700"
                     >
                       {/* Item icon */}
-                      <div className="w-12 h-12 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 flex items-center justify-center flex-shrink-0">
-                        {item.type === 'headphone'
-                          ? <Headphones className="w-5 h-5 text-gray-400" />
-                          : <Package className="w-5 h-5 text-gray-400" />
-                        }
+                      <div className="w-12 h-12 rounded-xl bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-700 flex items-center justify-center flex-shrink-0 relative overflow-hidden">
+                        {item.image ? (
+                          <Image src={item.image} alt={item.name} fill sizes="48px" className="object-cover" />
+                        ) : item.type === 'headphone' ? (
+                          <Headphones className="w-5 h-5 text-gray-400" />
+                        ) : (
+                          <Package className="w-5 h-5 text-gray-400" />
+                        )}
                       </div>
 
                       {/* Item details */}

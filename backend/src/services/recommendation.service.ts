@@ -1,28 +1,43 @@
-import { headphoneProducts } from "@/data/products";
+import { getAllProducts } from "@/services/product.service";
 import { rankProducts } from "@/ranking/scoring";
 import { compareProducts } from "@/ranking/comparator";
 import { getOrCreateSession } from "@/memory/session";
 import type { PreferenceMemory } from "@/types/chat";
+import type { HeadphoneProduct } from "@/types/product";
 import type { ScoredProduct, ComparisonResult } from "@/types/recommendation";
-import { getProductsByIds } from "./product.service";
+
+// Shared in-memory product cache used by recommendation engine
+// Populated on first call to any recommendation function
+let _productCache: HeadphoneProduct[] | null = null;
+
+async function getProducts(): Promise<HeadphoneProduct[]> {
+  if (!_productCache) {
+    _productCache = await getAllProducts();
+  }
+  return _productCache;
+}
+
+/** Invalidate cache so next call re-fetches from Shopify */
+export function invalidateProductCache() {
+  _productCache = null;
+}
 
 /**
  * Get ranked recommendations for a session.
  */
-export function getRecommendations(
+export async function getRecommendations(
   sessionId: string,
   options?: {
     filters?: { category?: string; style?: string; minPrice?: number; maxPrice?: number; tags?: string[] };
     weightOverrides?: Record<string, number>;
     limit?: number;
   }
-): ScoredProduct[] {
+): Promise<ScoredProduct[]> {
   const session = getOrCreateSession(sessionId);
   const preferences = session.preferences;
   const limit = options?.limit || 5;
 
-  // Start with all products, then apply optional filters
-  let candidates = [...headphoneProducts];
+  let candidates = await getProducts();
 
   if (options?.filters) {
     const f = options.filters;
@@ -44,12 +59,15 @@ export function getRecommendations(
 /**
  * Compare specific products for a session.
  */
-export function getComparison(
+export async function getComparison(
   sessionId: string,
   productIds: string[]
-): ComparisonResult | null {
+): Promise<ComparisonResult | null> {
   const session = getOrCreateSession(sessionId);
-  const products = getProductsByIds(productIds);
+  const allProducts = await getProducts();
+  const products = productIds
+    .map((id) => allProducts.find((p) => p.id === id))
+    .filter(Boolean) as HeadphoneProduct[];
 
   if (products.length < 2) return null;
 
@@ -59,9 +77,10 @@ export function getComparison(
 /**
  * Get recommendations based on raw preferences (no session needed).
  */
-export function getRecommendationsFromPreferences(
+export async function getRecommendationsFromPreferences(
   preferences: PreferenceMemory,
   limit: number = 5
-): ScoredProduct[] {
-  return rankProducts(headphoneProducts, preferences, limit);
+): Promise<ScoredProduct[]> {
+  const products = await getProducts();
+  return rankProducts(products, preferences, limit);
 }

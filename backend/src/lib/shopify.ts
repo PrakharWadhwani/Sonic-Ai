@@ -11,13 +11,13 @@ export async function shopifyFetch<T>(query: string, variables?: Record<string, 
     throw new Error("Shopify not configured. Running in mock mode.");
   }
 
-  const endpoint = `https://${SHOPIFY_STORE_DOMAIN}/api/2025-04/graphql.json`;
+  const endpoint = `https://${SHOPIFY_STORE_DOMAIN}/admin/api/2024-01/graphql.json`;
 
   const response = await fetch(endpoint, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      "X-Shopify-Storefront-Access-Token": SHOPIFY_STOREFRONT_ACCESS_TOKEN,
+      "X-Shopify-Access-Token": SHOPIFY_STOREFRONT_ACCESS_TOKEN,
     },
     body: JSON.stringify({ query, variables }),
   });

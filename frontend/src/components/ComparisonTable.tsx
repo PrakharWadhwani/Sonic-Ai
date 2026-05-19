@@ -1,7 +1,8 @@
 'use client';
 
 import { motion } from 'motion/react';
-import { Headphone } from '@/data/headphones';
+import Image from 'next/image';
+import { Headphone } from '@/store/app-store';
 import { Shield, Volume2, Headphones, Battery, Mic, Briefcase, Timer, DollarSign, Check, X as XIcon, Crown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -75,8 +76,15 @@ export function ComparisonTable({ items }: ComparisonTableProps) {
                     initial={{ opacity: 0, y: -10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.1 }}
-                    className="space-y-1"
+                    className="space-y-1 flex flex-col items-center"
                   >
+                    <div className="relative w-10 h-10 mb-1 rounded-lg bg-gray-50 dark:bg-gray-800 overflow-hidden border border-gray-100 dark:border-gray-700 flex items-center justify-center">
+                      {item.image ? (
+                        <Image src={item.image} alt={item.name} fill sizes="40px" className="object-cover" />
+                      ) : (
+                        <Headphones className="w-4 h-4 text-gray-400" />
+                      )}
+                    </div>
                     <p className="text-[10px] font-medium text-gray-400 uppercase">{item.brand}</p>
                     <p className="text-xs font-semibold text-gray-900 dark:text-gray-100">{item.name}</p>
                   </motion.div>

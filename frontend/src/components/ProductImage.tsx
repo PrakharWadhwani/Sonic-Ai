@@ -2,8 +2,10 @@
 
 import { motion } from 'motion/react';
 import { Headphones } from 'lucide-react';
+import Image from 'next/image';
 
 interface ProductImageProps {
+  src?: string;
   color: string;
   category: string;
   name: string;
@@ -27,7 +29,7 @@ const categoryIcons: Record<string, { ringColor: string; iconColor: string; glow
   office: { ringColor: 'border-slate-200', iconColor: 'text-slate-500', glowColor: 'shadow-slate-200/50' },
 };
 
-export function ProductImage({ color, category, name, size = 'md' }: ProductImageProps) {
+export function ProductImage({ src, color, category, name, size = 'md' }: ProductImageProps) {
   const gradient = categoryGradients[category] || categoryGradients.travel;
   const style = categoryIcons[category] || categoryIcons.travel;
   const sizeClasses = {
@@ -40,7 +42,17 @@ export function ProductImage({ color, category, name, size = 'md' }: ProductImag
 
   return (
     <div className={`relative ${s.container} bg-gradient-to-br ${gradient[0]} ${gradient[1]} ${gradient[2]} flex items-center justify-center overflow-hidden`}>
-      {/* Decorative background circles */}
+      {src ? (
+        <Image 
+          src={src} 
+          alt={name} 
+          fill 
+          sizes="(max-width: 768px) 100vw, 300px"
+          className="object-cover" 
+        />
+      ) : (
+        <>
+          {/* Decorative background circles */}
       <div className="absolute inset-0">
         <motion.div
           animate={{ scale: [1, 1.1, 1], opacity: [0.05, 0.1, 0.05] }}
@@ -79,9 +91,11 @@ export function ProductImage({ color, category, name, size = 'md' }: ProductImag
           </motion.div>
         </div>
       </motion.div>
+        </>
+      )}
 
       {/* Bottom brand gradient bar */}
-      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white/40 dark:from-gray-900/40 to-transparent" />
+      <div className="absolute bottom-0 left-0 right-0 h-8 bg-gradient-to-t from-white/40 dark:from-gray-900/40 to-transparent pointer-events-none" />
     </div>
   );
 }

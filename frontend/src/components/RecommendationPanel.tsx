@@ -10,7 +10,7 @@ import { RecommendationReason } from './RecommendationReason';
 import { FilterSortBar } from './FilterSortBar';
 import { SoundWave } from './SoundWave';
 import { Headphones, BarChart3, Sparkles, ArrowDownUp, Layers, TrendingUp } from 'lucide-react';
-import { Headphone } from '@/data/headphones';
+import { Headphone } from '@/store/app-store';
 
 export function RecommendationPanel() {
   const {

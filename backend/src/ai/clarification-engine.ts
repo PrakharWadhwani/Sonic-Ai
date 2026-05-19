@@ -24,7 +24,7 @@ const FIELD_IMPACT_ORDER: {
 /**
  * Confidence threshold below which we should ask a clarification question.
  */
-const CONFIDENCE_THRESHOLD = 0.6;
+const CONFIDENCE_THRESHOLD = 0.5;
 
 /**
  * Maximum number of questions to ask per turn.
@@ -33,8 +33,9 @@ const MAX_QUESTIONS_PER_TURN = 3;
 
 /**
  * Minimum overall confidence needed before we can recommend.
+ * Lowered from 0.5 to 0.3 to reduce loop of asking questions (only need ~1-2 fields)
  */
-const RECOMMENDATION_CONFIDENCE_THRESHOLD = 0.5;
+const RECOMMENDATION_CONFIDENCE_THRESHOLD = 0.3;
 
 /**
  * Generates intelligent clarification questions based on what's unknown or uncertain.
@@ -51,7 +52,8 @@ export function generateClarificationQuestions(
     if (questions.length >= MAX_QUESTIONS_PER_TURN) break;
 
     const confidence = confidences[field] ?? 0;
-    if (confidence >= CONFIDENCE_THRESHOLD) continue;
+    // Use lower threshold (0.5) for skipping questions - if confidence is decent, don't ask
+    if (confidence >= 0.5) continue;
 
     // Skip fields that memory already has good values for
     if (isFieldKnownInMemory(field, memory)) continue;
@@ -70,16 +72,21 @@ export function generateClarificationQuestions(
 
 /**
  * Check if we have enough confidence to make recommendations.
+ * More lenient: if user has stated a use case clearly, we can recommend.
  */
 export function hasEnoughContext(intent: ExtractedIntent, memory: PreferenceMemory): boolean {
   const confidences = intent.confidenceScores || {};
 
-  // Must know at least one use case
-  if (!intent.useCases || intent.useCases.length === 0) {
-    if (!memory.primaryUseCase) return false;
+  // Check if we have at least one high-confidence use case from the intent
+  const hasHighConfidenceUseCase = intent.useCases && intent.useCases.length > 0 && 
+                                    intent.useCases.some((uc) => (confidences[uc] ?? 0) >= 0.7);
+  
+  if (hasHighConfidenceUseCase || memory.primaryUseCase) {
+    // With a clear use case, we have enough to recommend even without other fields
+    return true;
   }
 
-  // Calculate average confidence of top-impact fields
+  // Fallback: check if we have enough coverage of important fields
   const topFields = FIELD_IMPACT_ORDER.slice(0, 5);
   let knownCount = 0;
   for (const { field } of topFields) {
@@ -100,7 +107,7 @@ function isFieldKnownInMemory(field: string, memory: PreferenceMemory): boolean 
     case "style":
       return !!memory.preferredStyle && memory.preferredStyle !== "no-preference";
     case "ancImportance":
-      return !!memory.ancImportance;
+      return !!memory.ancImportance && memory.ancImportance !== "not-needed";
     case "comfortPriority":
       return !!memory.comfortPriority;
     case "microphoneNeeded":

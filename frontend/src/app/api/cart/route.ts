@@ -1,48 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
-import { CartRequestSchema } from "@/types/cart";
-import { handleCartAction } from "@/services/cart.service";
-import { errorResponse, successResponse } from "@/types/api";
+
+const BACKEND_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 /**
- * POST /api/cart
- * Cart operations: create, add, update, remove, get.
- *
- * Body: { sessionId: string, action: "create"|"add"|"update"|"remove"|"get", productId?: string, quantity?: number }
+ * POST /api/cart — Proxy to backend
  */
 export async function POST(request: NextRequest) {
-  const startTime = Date.now();
-
   try {
     const body = await request.json();
-    const parsed = CartRequestSchema.safeParse(body);
 
-    if (!parsed.success) {
-      return NextResponse.json(
-        errorResponse("VALIDATION_ERROR", "Invalid request body", parsed.error.format()),
-        { status: 400 }
-      );
-    }
+    const url = new URL("/api/cart", BACKEND_URL);
 
-    const { sessionId, action, productId, variantId, quantity, lineItemId } = parsed.data;
-
-    const result = await handleCartAction(sessionId, action, {
-      productId,
-      variantId,
-      quantity,
-      lineItemId,
+    const response = await fetch(url.toString(), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
     });
 
-    return NextResponse.json(
-      successResponse(result, { processingTimeMs: Date.now() - startTime }),
-      { status: 200 }
-    );
+    const data = await response.json();
+    return NextResponse.json(data, { status: response.status });
   } catch (error) {
-    console.error("[POST /api/cart] Error:", error);
-    const message = error instanceof Error ? error.message : "Internal server error";
-    const status = message.includes("not found") ? 404 : 500;
+    console.error("[POST /api/cart] Proxy error:", error);
+    const message = error instanceof Error ? error.message : "Backend unavailable";
     return NextResponse.json(
-      errorResponse(status === 404 ? "NOT_FOUND" : "INTERNAL_ERROR", message),
-      { status }
+      { success: false, error: { code: "PROXY_ERROR", message } },
+      { status: 502 }
     );
   }
 }

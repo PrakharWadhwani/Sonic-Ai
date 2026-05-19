@@ -1,8 +1,10 @@
 'use client';
 
-import { createContext, useContext, useCallback, useState, useRef, ReactNode } from 'react';
-import { Headphone, headphones } from '@/data/headphones';
-import { getRecommendations, parsePreferences, Preference, CartItem, Message } from '@/store/app-store';
+import { createContext, useContext, useCallback, useState, useRef, useEffect, ReactNode } from 'react';
+import { Headphone, fetchHeadphones } from '@/store/app-store';
+import { parsePreferences, Preference, CartItem, Message } from '@/store/app-store';
+import { processChat } from '@/services/chat.service';
+import { getRecommendations } from '@/services/recommendation.service';
 
 interface StoreState {
   messages: Message[];
@@ -18,6 +20,9 @@ interface StoreState {
   wishlist: string[];
   isCheckoutOpen: boolean;
   isDarkMode: boolean;
+  allProducts: Headphone[];
+  isLoadingProducts: boolean;
+  sessionId: string;
 }
 
 interface StoreActions {
@@ -143,7 +148,25 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     wishlist: [],
     isCheckoutOpen: false,
     isDarkMode: false,
+    allProducts: [],
+    isLoadingProducts: true,
+    sessionId: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : '123e4567-e89b-12d3-a456-426614174000',
   });
+
+  // Fetch products from backend on mount
+  useEffect(() => {
+    let cancelled = false;
+    fetchHeadphones().then(products => {
+      if (!cancelled) {
+        setFullState(prev => ({
+          ...prev,
+          allProducts: products,
+          isLoadingProducts: false,
+        }));
+      }
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const update = useCallback((partial: Partial<StoreState>) => {
     setFullState(prev => ({ ...prev, ...partial }));
@@ -162,7 +185,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return message;
   }, []);
 
-  const handleUserMessage = useCallback((content: string) => {
+  const handleUserMessage = useCallback(async (content: string) => {
     // Add user message
     const userMsg: Message = {
       id: Date.now().toString(),
@@ -171,37 +194,59 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       timestamp: new Date(),
     };
 
-    // Parse preferences from the message
-    const newPrefs = parsePreferences(content);
+    setFullState(prev => ({
+      ...prev,
+      messages: [...prev.messages, userMsg],
+      isThinking: true,
+    }));
 
-    setFullState(prev => {
-      // Merge new preferences (avoid duplicates by id)
-      const existingIds = new Set(prev.preferences.map(p => p.id));
-      const mergedPrefs = [...prev.preferences, ...newPrefs.filter(p => !existingIds.has(p.id))];
-
-      return {
-        ...prev,
-        messages: [...prev.messages, userMsg],
-        isThinking: true,
-        preferences: mergedPrefs,
-      };
-    });
-
-    // Simulate AI thinking delay
-    setTimeout(() => {
+    try {
+      // Call actual backend AI endpoint using the store's sessionId
+      const response = await processChat(content, state.sessionId);
+      
       setFullState(prev => {
-        const { products, reasoning } = getRecommendations(prev.preferences);
-
-        const aiResponse = getAIResponse(content);
-
         const aiMsg: Message = {
           id: (Date.now() + 1).toString(),
           role: 'assistant',
-          content: aiResponse,
+          content: response.message,
           timestamp: new Date(),
-          recommendations: products.map(p => p.id),
-          reasoning,
+          recommendations: response.recommendations?.map(r => r.product.id) || [],
+          reasoning: '', // Optional reasoning string
         };
+
+        // Convert PreferenceMemory to Preference[] for frontend
+        const prefs = response.preferenceMemory;
+        const newPrefs: Preference[] = [];
+        if (prefs.primaryUseCase) newPrefs.push({ id: 'usecase', label: 'Use Case', value: prefs.primaryUseCase });
+        if (prefs.budget?.max) newPrefs.push({ id: 'budget', label: 'Budget', value: `$${prefs.budget.max}` });
+        if (prefs.preferredStyle) newPrefs.push({ id: 'style', label: 'Style', value: prefs.preferredStyle });
+
+        // Extract products from recommendations to update the store's recommendation list
+        const recProducts = response.recommendations?.map(r => {
+          // Map backend product to frontend product format
+          const p = r.product;
+          return {
+            id: p.id,
+            name: p.name,
+            brand: p.brand,
+            price: p.price,
+            soundQuality: p.soundQuality ?? 7,
+            comfort: p.comfort ?? 7,
+            batteryLife: p.batteryLife ?? 20,
+            anc: p.noiseCancellation ?? 5,
+            micQuality: p.microphoneQuality ?? 6,
+            portability: p.portability ?? 7,
+            latency: p.latency ?? 150,
+            weight: p.weight ?? 250,
+            pros: p.pros ?? [],
+            cons: p.cons ?? [],
+            tags: p.tags ?? [],
+            image: p.imageUrl ?? '',
+            category: p.category ?? 'lifestyle',
+            color: '#6366f1',
+            description: p.description ?? '',
+          } as Headphone;
+        }) || [];
 
         // Set comparison items if "compare" mentioned
         const lower = content.toLowerCase();
@@ -209,33 +254,71 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         return {
           ...prev,
+          sessionId: response.sessionId,
           messages: [...prev.messages, aiMsg],
-          recommendations: products,
-          reasoning,
+          preferences: newPrefs.length > 0 ? newPrefs : prev.preferences,
+          recommendations: recProducts.length > 0 ? recProducts : prev.recommendations,
           isThinking: false,
-          comparisonItems: showComp ? products.slice(0, 3) : prev.comparisonItems,
+          comparisonItems: showComp && recProducts.length > 0 ? recProducts.slice(0, 3) : prev.comparisonItems,
           showComparison: showComp ? true : prev.showComparison,
         };
       });
-    }, 1500 + Math.random() * 1000);
+    } catch (error) {
+      console.error("Chat failed:", error);
+      setFullState(prev => ({ ...prev, isThinking: false }));
+    }
   }, []);
 
-  const rerank = useCallback((newPriority: string) => {
-    const newPref = parsePreferences(newPriority);
-    setFullState(prev => {
-      // Replace matching preferences or add new ones
-      const existingIds = new Set(newPref.map(p => p.id));
-      const filtered = prev.preferences.filter(p => !existingIds.has(p.id));
-      const mergedPrefs = [...filtered, ...newPref];
-      const { products, reasoning } = getRecommendations(mergedPrefs);
+  const rerank = useCallback(async (newPriority: string) => {
+    // Fire off a background request to the recommendation engine
+    setFullState(prev => ({ ...prev, isThinking: true }));
+    try {
+      // First get current session ID safely
+      let sessionId = '';
+      setFullState(prev => { sessionId = prev.sessionId; return prev; });
+      
+      const recs = await getRecommendations(sessionId, {
+         // Pass some context about the re-rank as an override if needed,
+         // but for now we just ask the backend for recommendations
+      });
+      
+      setFullState(prev => {
+        // Map backend ScoredProduct[] to Headphone[]
+        const recProducts = recs.map(r => {
+          const p = r.product;
+          return {
+            id: p.id,
+            name: p.name,
+            brand: p.brand,
+            price: p.price,
+            soundQuality: p.soundQuality ?? 7,
+            comfort: p.comfort ?? 7,
+            batteryLife: p.batteryLife ?? 20,
+            anc: p.noiseCancellation ?? 5,
+            micQuality: p.microphoneQuality ?? 6,
+            portability: p.portability ?? 7,
+            latency: p.latency ?? 150,
+            weight: p.weight ?? 250,
+            pros: p.pros ?? [],
+            cons: p.cons ?? [],
+            tags: p.tags ?? [],
+            image: p.imageUrl ?? '',
+            category: p.category ?? 'lifestyle',
+            color: '#6366f1',
+            description: p.description ?? '',
+          } as Headphone;
+        });
 
-      return {
-        ...prev,
-        preferences: mergedPrefs,
-        recommendations: products,
-        reasoning,
-      };
-    });
+        return {
+          ...prev,
+          recommendations: recProducts,
+          isThinking: false,
+        };
+      });
+    } catch (e) {
+      console.error(e);
+      setFullState(prev => ({ ...prev, isThinking: false }));
+    }
   }, []);
 
   const addToCart = useCallback((item: Omit<CartItem, 'quantity'>) => {

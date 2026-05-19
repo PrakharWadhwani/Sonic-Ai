@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'motion/react';
-import { Headphone } from '@/data/headphones';
+import { Headphone } from '@/store/app-store';
 import { ProductBadge } from './ProductBadge';
 import { ProductImage } from './ProductImage';
 import { AudioSpecBar } from './AudioSpecBar';
@@ -111,6 +111,7 @@ export function ProductCard({ product, index, rank, onAddToCart, onSelect, compa
 
       {/* Product Image Area */}
       <ProductImage
+        src={product.image}
         color={product.color}
         category={product.category}
         name={product.name}

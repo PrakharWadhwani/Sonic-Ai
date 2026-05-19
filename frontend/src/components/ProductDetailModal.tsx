@@ -2,7 +2,8 @@
 
 import { motion, AnimatePresence } from 'motion/react';
 import { X, ShoppingCart, Plus, Star, Battery, Volume2, Shield, Mic, Headphones, Weight, Timer, Zap, Check, ChevronRight } from 'lucide-react';
-import { Headphone } from '@/data/headphones';
+import Image from 'next/image';
+import { Headphone } from '@/store/app-store';
 import { ProductBadge } from './ProductBadge';
 import { AudioSpecBar } from './AudioSpecBar';
 import { cn } from '@/lib/utils';
@@ -72,46 +73,58 @@ export function ProductDetailModal({ product, isOpen, onClose, onAddToCart }: Pr
                     className="h-64 lg:h-full flex items-center justify-center relative"
                     style={{ background: `linear-gradient(135deg, ${product.color}15, ${product.color}08, #f8f9fa)` }}
                   >
-                    {/* Decorative circles */}
-                    <motion.div
-                      animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }}
-                      transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-                      className="absolute w-80 h-80 rounded-full border-2"
-                      style={{ borderColor: `${product.color}20` }}
-                    />
-                    <motion.div
-                      animate={{ scale: [1.1, 1, 1.1], opacity: [0.05, 0.15, 0.05] }}
-                      transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
-                      className="absolute w-60 h-60 rounded-full border-2"
-                      style={{ borderColor: `${product.color}30` }}
-                    />
-
-                    {/* Sound wave rings */}
-                    {[0, 1, 2].map((i) => (
-                      <motion.div
-                        key={i}
-                        animate={{
-                          scale: [1, 2.5],
-                          opacity: [0.3, 0],
-                        }}
-                        transition={{
-                          duration: 2.5,
-                          repeat: Infinity,
-                          delay: i * 0.8,
-                          ease: 'easeOut',
-                        }}
-                        className="absolute w-20 h-20 rounded-full border"
-                        style={{ borderColor: `${product.color}40` }}
+                    {product.image ? (
+                      <Image 
+                        src={product.image} 
+                        alt={product.name} 
+                        fill 
+                        sizes="(max-width: 1024px) 100vw, 50vw"
+                        className="object-cover" 
                       />
-                    ))}
+                    ) : (
+                      <>
+                        {/* Decorative circles */}
+                        <motion.div
+                          animate={{ scale: [1, 1.1, 1], opacity: [0.1, 0.2, 0.1] }}
+                          transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
+                          className="absolute w-80 h-80 rounded-full border-2"
+                          style={{ borderColor: `${product.color}20` }}
+                        />
+                        <motion.div
+                          animate={{ scale: [1.1, 1, 1.1], opacity: [0.05, 0.15, 0.05] }}
+                          transition={{ duration: 5, repeat: Infinity, ease: 'easeInOut' }}
+                          className="absolute w-60 h-60 rounded-full border-2"
+                          style={{ borderColor: `${product.color}30` }}
+                        />
 
-                    <motion.div
-                      initial={{ scale: 0.5, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
-                    >
-                      <Headphones className="w-28 h-28 lg:w-36 lg:h-36" style={{ color: product.color }} strokeWidth={1} />
-                    </motion.div>
+                        {/* Sound wave rings */}
+                        {[0, 1, 2].map((i) => (
+                          <motion.div
+                            key={i}
+                            animate={{
+                              scale: [1, 2.5],
+                              opacity: [0.3, 0],
+                            }}
+                            transition={{
+                              duration: 2.5,
+                              repeat: Infinity,
+                              delay: i * 0.8,
+                              ease: 'easeOut',
+                            }}
+                            className="absolute w-20 h-20 rounded-full border"
+                            style={{ borderColor: `${product.color}40` }}
+                          />
+                        ))}
+
+                        <motion.div
+                          initial={{ scale: 0.5, opacity: 0 }}
+                          animate={{ scale: 1, opacity: 1 }}
+                          transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.1 }}
+                        >
+                          <Headphones className="w-28 h-28 lg:w-36 lg:h-36" style={{ color: product.color }} strokeWidth={1} />
+                        </motion.div>
+                      </>
+                    )}
 
                     {/* Floating badges */}
                     <motion.div 

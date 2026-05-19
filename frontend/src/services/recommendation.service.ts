@@ -1,67 +1,46 @@
-import { headphoneProducts } from "@/data/products";
-import { rankProducts } from "@/ranking/scoring";
-import { compareProducts } from "@/ranking/comparator";
-import { getOrCreateSession } from "@/memory/session";
-import type { PreferenceMemory } from "@/types/chat";
+import { apiPost } from "@/lib/api-client";
 import type { ScoredProduct, ComparisonResult } from "@/types/recommendation";
-import { getProductsByIds } from "./product.service";
 
 /**
- * Get ranked recommendations for a session.
+ * Get ranked recommendations from the backend for a session.
  */
-export function getRecommendations(
+export async function getRecommendations(
   sessionId: string,
   options?: {
     filters?: { category?: string; style?: string; minPrice?: number; maxPrice?: number; tags?: string[] };
     weightOverrides?: Record<string, number>;
     limit?: number;
   }
-): ScoredProduct[] {
-  const session = getOrCreateSession(sessionId);
-  const preferences = session.preferences;
-  const limit = options?.limit || 5;
+): Promise<ScoredProduct[]> {
+  const result = await apiPost<{
+    recommendations: ScoredProduct[];
+    comparisonData: ComparisonResult | null;
+    totalCandidates: number;
+  }>("/api/recommend", {
+    sessionId,
+    filters: options?.filters,
+    weightOverrides: options?.weightOverrides,
+    limit: options?.limit || 5,
+  });
 
-  // Start with all products, then apply optional filters
-  let candidates = [...headphoneProducts];
-
-  if (options?.filters) {
-    const f = options.filters;
-    candidates = candidates.filter((p) => {
-      if (f.category && p.category !== f.category) return false;
-      if (f.style && p.style !== f.style) return false;
-      if (f.minPrice && p.price < f.minPrice) return false;
-      if (f.maxPrice && p.price > f.maxPrice) return false;
-      if (f.tags && f.tags.length > 0) {
-        if (!f.tags.some((t) => p.tags.includes(t))) return false;
-      }
-      return true;
-    });
-  }
-
-  return rankProducts(candidates, preferences, limit, options?.weightOverrides);
+  return result.recommendations;
 }
 
 /**
- * Compare specific products for a session.
+ * Compare specific products via the backend.
  */
-export function getComparison(
+export async function getComparison(
   sessionId: string,
   productIds: string[]
-): ComparisonResult | null {
-  const session = getOrCreateSession(sessionId);
-  const products = getProductsByIds(productIds);
+): Promise<ComparisonResult | null> {
+  const result = await apiPost<{
+    recommendations: ScoredProduct[];
+    comparisonData: ComparisonResult | null;
+    totalCandidates: number;
+  }>("/api/recommend", {
+    sessionId,
+    compareProductIds: productIds,
+  });
 
-  if (products.length < 2) return null;
-
-  return compareProducts(products, session.preferences);
-}
-
-/**
- * Get recommendations based on raw preferences (no session needed).
- */
-export function getRecommendationsFromPreferences(
-  preferences: PreferenceMemory,
-  limit: number = 5
-): ScoredProduct[] {
-  return rankProducts(headphoneProducts, preferences, limit);
+  return result.comparisonData;
 }

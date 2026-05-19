@@ -67,7 +67,7 @@ export async function processChat(
   // 8. Get recommendations if we have enough context
   let recommendations: ScoredProduct[] = [];
   if (enoughContext) {
-    recommendations = getRecommendations(session.id, { limit: 5 });
+    recommendations = await getRecommendations(session.id, { limit: 5 });
   }
 
   // 9. Handle weight adjustments from AI response
@@ -170,7 +170,7 @@ export async function processChatStreaming(
 
     let recommendations: ScoredProduct[] = [];
     if (enoughContext) {
-      recommendations = getRecommendations(session.id, { limit: 5 });
+      recommendations = await getRecommendations(session.id, { limit: 5 });
     }
 
     // Stream AI message
@@ -347,17 +347,19 @@ function generateFallbackResponse(
   clarifications: Array<{ question: string; field?: string }>,
   recommendations: ScoredProduct[]
 ): string {
-  if (clarifications.length > 0) {
-    const questions = clarifications.map((q) => q.question).join("\n• ");
-    return `Thanks for sharing! To find the perfect headphones for you, I have a few questions:\n\n• ${questions}`;
-  }
-
+  // If we have recommendations, present them instead of asking questions
   if (recommendations.length > 0) {
     const recs = recommendations
       .slice(0, 3)
       .map((r) => `**${r.rank}. ${r.product.name}** ($${r.product.price}) — ${r.whyRecommended}`)
       .join("\n\n");
     return `Based on what you've told me, here are my top recommendations:\n\n${recs}\n\nWould you like me to compare any of these in detail, or do you have any other preferences to share?`;
+  }
+
+  if (clarifications.length > 0) {
+    // Only ask a few clarifications, not all of them
+    const questionsToAsk = clarifications.slice(0, 2).map((q) => q.question).join("\n• ");
+    return `Thanks for sharing! To find the perfect headphones for you, I have a few quick questions:\n\n• ${questionsToAsk}`;
   }
 
   return "I'd love to help you find the perfect headphones! What will you primarily be using them for?";

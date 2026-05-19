@@ -1,15 +1,14 @@
-import OpenAI from "openai";
+/**
+ * OpenAI client stub.
+ * NOTE: AI features are now handled entirely by the backend.
+ * This file is kept as a stub so that any remaining references compile,
+ * but no OpenAI SDK is needed in the frontend.
+ */
 
-if (!process.env.OPENAI_API_KEY) {
-  console.warn("⚠️  OPENAI_API_KEY not set. AI features will use mock responses.");
-}
-
-export const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY || "sk-mock-key",
-});
+export const openai: any = null;
 
 export const OPENAI_MODEL = process.env.OPENAI_MODEL || "gpt-4o";
 
 export function isOpenAIConfigured(): boolean {
-  return !!process.env.OPENAI_API_KEY && process.env.OPENAI_API_KEY !== "sk-mock-key";
+  return false; // AI is handled by the backend
 }

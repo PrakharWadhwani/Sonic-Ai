@@ -9,7 +9,7 @@ import { CartSidebar } from '@/components/CartSidebar';
 import { ProductDetailModal } from '@/components/ProductDetailModal';
 import { CheckoutModal } from '@/components/CheckoutModal';
 import { ToastProvider, useToast } from '@/components/Toast';
-import { accessories } from '@/data/headphones';
+
 import { motion, AnimatePresence } from 'motion/react';
 
 function MobileRecommendationToggle() {
@@ -117,7 +117,7 @@ function AppContent() {
             name: acc.name,
             brand: 'SonicAI',
             price: acc.price,
-            image: acc.image,
+            image: '',
             type: 'accessory',
           });
         }}

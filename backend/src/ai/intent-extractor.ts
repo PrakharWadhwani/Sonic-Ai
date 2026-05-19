@@ -147,7 +147,8 @@ function extractIntentFallback(message: string): ExtractedIntent {
   for (const [useCase, keywords] of Object.entries(useCaseMap)) {
     if (keywords.some((k) => lower.includes(k))) {
       intent.useCases.push(useCase);
-      intent.confidenceScores![useCase] = 0.7;
+      // Increase confidence for use cases since this is a key classifier
+      intent.confidenceScores![useCase] = 0.85;
     }
   }
 
@@ -165,7 +166,8 @@ function extractIntentFallback(message: string): ExtractedIntent {
   for (const [priority, keywords] of Object.entries(priorityMap)) {
     if (keywords.some((k) => lower.includes(k))) {
       intent.priorities.push(priority);
-      intent.confidenceScores![priority] = 0.6;
+      // Increased from 0.6 to 0.8 for direct mentions
+      intent.confidenceScores![priority] = 0.8;
     }
   }
 

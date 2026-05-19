@@ -5,19 +5,15 @@ export const PRODUCTS_QUERY = `
         node {
           id
           title
-          description
+          descriptionHtml
           handle
-          priceRange {
-            minVariantPrice { amount currencyCode }
-            maxVariantPrice { amount currencyCode }
-          }
+          tags
           variants(first: 5) {
             edges {
               node {
                 id
                 title
-                price { amount currencyCode }
-                availableForSale
+                price
               }
             }
           }

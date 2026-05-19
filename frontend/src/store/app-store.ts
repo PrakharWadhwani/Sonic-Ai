@@ -1,4 +1,24 @@
-import { Headphone, headphones } from '@/data/headphones';
+export interface Headphone {
+  id: string;
+  name: string;
+  brand: string;
+  price: number;
+  soundQuality: number; // 1-10
+  comfort: number; // 1-10
+  batteryLife: number; // hours
+  anc: number; // 1-10
+  micQuality: number; // 1-10
+  portability: number; // 1-10
+  latency: number; // ms
+  weight: number; // grams
+  pros: string[];
+  cons: string[];
+  tags: string[];
+  image: string;
+  category: 'travel' | 'gaming' | 'workout' | 'audiophile' | 'office';
+  color: string;
+  description: string;
+}
 
 export interface Preference {
   id: string;
@@ -68,8 +88,52 @@ export function subscribe(listener: () => void) {
   return () => listeners.delete(listener);
 }
 
-// AI reasoning engine - simulates intelligent recommendations
-export function getRecommendations(preferences: Preference[]): { products: Headphone[]; reasoning: string } {
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
+
+/**
+ * Fetch all headphone products from the backend API.
+ */
+export async function fetchHeadphones(): Promise<Headphone[]> {
+  try {
+    const response = await fetch(`${API_BASE_URL}/api/products`);
+    if (!response.ok) {
+      console.error('Failed to fetch products:', response.status);
+      return [];
+    }
+    const json = await response.json();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const raw: any[] = json.success && json.data?.products ? json.data.products : [];
+
+    // Map backend HeadphoneProduct → frontend Headphone
+    return raw.map((p): Headphone => ({
+      id: p.id,
+      name: p.name,
+      brand: p.brand,
+      price: p.price,
+      soundQuality: p.soundQuality ?? 7,
+      comfort: p.comfort ?? 7,
+      batteryLife: p.batteryLife ?? 20,
+      anc: p.noiseCancellation ?? p.anc ?? 5,
+      micQuality: p.microphoneQuality ?? p.micQuality ?? 6,
+      portability: p.portability ?? 7,
+      latency: p.latency ?? 150,
+      weight: p.weight ?? 250,
+      pros: p.pros ?? [],
+      cons: p.cons ?? [],
+      tags: p.tags ?? [],
+      image: p.imageUrl ?? p.image ?? '',
+      category: p.category ?? 'lifestyle',
+      color: p.color ?? '#6366f1',
+      description: p.description ?? '',
+    }));
+  } catch (error) {
+    console.error('Failed to fetch products from backend:', error);
+    return [];
+  }
+}
+
+// AI reasoning engine - uses fetched products for recommendations
+export function getRecommendations(preferences: Preference[], headphones: Headphone[]): { products: Headphone[]; reasoning: string } {
   let scored = headphones.map(h => {
     let score = 0;
     let reasons: string[] = [];

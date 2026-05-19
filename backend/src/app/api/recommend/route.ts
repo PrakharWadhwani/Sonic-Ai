@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const { sessionId, filters, weightOverrides, limit, compareProductIds } = parsed.data;
 
     // Get ranked recommendations
-    const recommendations = getRecommendations(sessionId, {
+    const recommendations = await getRecommendations(sessionId, {
       filters,
       weightOverrides,
       limit,
@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
     // Get comparison data if specific product IDs provided
     let comparisonData = null;
     if (compareProductIds && compareProductIds.length >= 2) {
-      comparisonData = getComparison(sessionId, compareProductIds);
+      comparisonData = await getComparison(sessionId, compareProductIds);
     }
 
     return NextResponse.json(

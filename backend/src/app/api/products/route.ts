@@ -5,9 +5,8 @@ import { errorResponse, successResponse } from "@/types/api";
 
 /**
  * GET /api/products
- * Get all products with optional filters.
- *
- * Query params: ?category=travel&minPrice=100&maxPrice=400&style=over-ear&tags=anc,comfort&q=search&id=uuid
+ * Fetches live products from Shopify (cached 5 min) with optional filters.
+ * Query params: ?category=travel&minPrice=100&maxPrice=400&style=over-ear&tags=anc&q=search&id=uuid
  */
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
@@ -18,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Single product by ID
     const id = params.get("id");
     if (id) {
-      const product = getProduct(id);
+      const product = await getProduct(id);
       if (!product) {
         return NextResponse.json(
           errorResponse("NOT_FOUND", `Product ${id} not found`),
@@ -34,7 +33,7 @@ export async function GET(request: NextRequest) {
     // Search by query
     const query = params.get("q");
     if (query) {
-      const results = searchProducts(query);
+      const results = await searchProducts(query);
       return NextResponse.json(
         successResponse({ products: results, total: results.length }, { processingTimeMs: Date.now() - startTime }),
         { status: 200 }
@@ -54,7 +53,7 @@ export async function GET(request: NextRequest) {
     const filterParsed = ProductFilterSchema.safeParse(filterInput);
     const filters = filterParsed.success ? filterParsed.data : undefined;
 
-    const products = getAllProducts(filters);
+    const products = await getAllProducts(filters);
 
     return NextResponse.json(
       successResponse(

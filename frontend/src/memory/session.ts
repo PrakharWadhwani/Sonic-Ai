@@ -1,4 +1,4 @@
-import { v4 as uuidv4 } from "uuid";
+const uuidv4 = () => crypto.randomUUID();
 import type { PreferenceMemory, ExtractedIntent, ConversationTurn } from "@/types/chat";
 
 /**
