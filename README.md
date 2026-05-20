@@ -150,14 +150,6 @@ Try typing something like:
 
 ---
 
-## 🎥 Demo Video
-
-> 📹 **[Watch the Demo — YouTube (Unlisted)](https://youtube.com/your-link-here)**
->
-> A 3–5 minute walkthrough showing the full conversation flow, live re-ranking, cart, and comparison features.
-
----
-
 ## 🔑 Running Without API Keys
 
 Sonic AI is designed to work **fully offline** with no external accounts:
