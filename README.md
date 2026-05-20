@@ -27,8 +27,9 @@ Shopping for headphones is overwhelming. Hundreds of products, dozens of specs, 
 - 🔌 **Shopify Integration** — Optional live Shopify product + cart sync; falls back to mock data gracefully
 
 - <img width="1600" height="859" alt="WhatsApp Image 2026-05-20 at 1 25 39 PM" src="https://github.com/user-attachments/assets/6d02b7d1-bf89-4abe-a4e6-dd7a5a8f0ebf" />
+- <img width="1600" height="859" alt="WhatsApp Image 2026-05-20 at 1 25 39 PM" src="https://github.com/user-attachments/assets/ad174878-7a20-4662-a260-a2c4a7682a6c" />
 
-<img width="1600" height="859" alt="WhatsApp Image 2026-05-20 at 1 25 39 PM" src="https://github.com/user-attachments/assets/544726ce-acf2-4a38-81be-4cd813eebe43" />
+
 
 
 ---
