@@ -12,6 +12,8 @@ Shopping for headphones is overwhelming. Hundreds of products, dozens of specs, 
 
 **Sonic AI solves this** by letting you have a natural conversation — like talking to an expert friend — and surfacing the best options for you, explained in plain language.
 
+Demo Video Link- https://drive.google.com/file/d/1RmX4obGmGRd9v_E8a0hMmwsIuHG_Ykyk/view?usp=sharing
+
 ---
 
 ## ✨ Key Features
